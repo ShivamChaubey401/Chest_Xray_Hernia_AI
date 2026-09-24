@@ -10,9 +10,9 @@ import os
 from datetime import datetime
 
 
-# =========================================================
+
 # PAGE CONFIGURATION
-# =========================================================
+
 
 st.set_page_config(
     page_title="Chest X-Ray Hernia Screening",
@@ -21,9 +21,9 @@ st.set_page_config(
 )
 
 
-# =========================================================
+
 # HEADER
-# =========================================================
+
 
 st.title("🩻 Generative AI-Enhanced Explainable Chest X-Ray Screening")
 
@@ -35,18 +35,18 @@ st.caption(
 st.divider()
 
 
-# =========================================================
+
 # DEVICE
-# =========================================================
+
 
 device = torch.device(
     "cuda" if torch.cuda.is_available() else "cpu"
 )
 
 
-# =========================================================
+
 # MODEL
-# =========================================================
+
 
 @st.cache_resource
 def load_trained_model():
@@ -92,9 +92,9 @@ model = load_trained_model()
 classes = ["Hernia", "Normal"]
 
 
-# =========================================================
+
 # IMAGE TRANSFORM
-# =========================================================
+
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -106,9 +106,9 @@ transform = transforms.Compose([
 ])
 
 
-# =========================================================
+
 # OOD / NON-X-RAY VALIDATION FILTER
-# =========================================================
+
 
 def validate_chest_xray(img_pil):
     """
@@ -140,9 +140,9 @@ def validate_chest_xray(img_pil):
     return True, "Valid X-Ray"
 
 
-# =========================================================
+
 # GRAD-CAM
-# =========================================================
+
 
 class GradCAM:
 
@@ -176,9 +176,9 @@ class GradCAM:
         self.backward_handle.remove()
 
 
-# =========================================================
+
 # SIDEBAR
-# =========================================================
+
 
 st.sidebar.header("📥 Upload X-Ray")
 
@@ -192,9 +192,9 @@ st.sidebar.caption(
 )
 
 
-# =========================================================
+
 # MAIN APP
-# =========================================================
+
 
 if uploaded_file is None:
 
@@ -220,9 +220,9 @@ if uploaded_file is None:
 
 else:
 
-    # -----------------------------------------------------
+   
     # LOAD IMAGE
-    # -----------------------------------------------------
+    
 
     try:
 
@@ -234,9 +234,9 @@ else:
         st.stop()
 
 
-    # -----------------------------------------------------
+    
     # BASIC RESOLUTION CHECK
-    # -----------------------------------------------------
+   
 
     width, height = raw_image.size
 
@@ -250,9 +250,9 @@ else:
         st.stop()
 
 
-    # -----------------------------------------------------
+   
     # OOD / NON-MEDICAL IMAGE VALIDATION
-    # -----------------------------------------------------
+
 
     is_valid, validation_reason = validate_chest_xray(raw_image)
 
@@ -276,18 +276,18 @@ else:
         st.stop()
 
 
-    # -----------------------------------------------------
+   
     # PREPROCESS
-    # -----------------------------------------------------
+   
 
     input_tensor = transform(raw_image)
     input_tensor = input_tensor.unsqueeze(0)
     input_tensor = input_tensor.to(device)
 
 
-    # =====================================================
+   
     # PREDICTION & UNCERTAINTY HANDLING
-    # =====================================================
+   
 
     with torch.no_grad():
 
@@ -308,9 +308,9 @@ else:
     is_borderline = confidence < 78.0
 
 
-    # =====================================================
+    
     # RESULT SECTION
-    # =====================================================
+   
 
     st.subheader("Screening Result")
 
@@ -353,9 +353,9 @@ else:
             "not medical certainty."
         )
 
-        # -------------------------------------------------
+       
         # REPORT DOWNLOAD BUTTON
-        # -------------------------------------------------
+        
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         report_content = f"""==================================================
 CHEST X-RAY HERNIA SCREENING REPORT
@@ -400,7 +400,7 @@ consultation.
         )
 
 
-    # =====================================================
+   
     # PROBABILITY
     # =====================================================
 
@@ -436,9 +436,9 @@ consultation.
         )
 
 
-    # =====================================================
+   
     # GRAD-CAM (PROMINENTLY FOR HERNIA ONLY)
-    # =====================================================
+    
 
     st.divider()
 
@@ -522,9 +522,11 @@ consultation.
         )
 
 
-    # =====================================================
+    
     # DISCLAIMER
     # =====================================================
+
+    
 
     st.divider()
 
