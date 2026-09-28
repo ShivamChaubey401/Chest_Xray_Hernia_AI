@@ -11,21 +11,16 @@ from datetime import datetime
 from google import genai
 
 
-# =========================================================
+
 # PAGE CONFIGURATION
-# =========================================================
+
 
 st.set_page_config(
     page_title="Chest X-Ray Hernia Screening",
     page_icon="🩻",
     layout="wide"
 )
-
-
-# =========================================================
 # HEADER
-# =========================================================
-
 st.title(
     "🩻 Generative AI-Enhanced Explainable Chest X-Ray Screening"
 )
@@ -36,21 +31,11 @@ st.caption(
 )
 
 st.divider()
-
-
-# =========================================================
 # DEVICE
-# =========================================================
-
 device = torch.device(
     "cuda" if torch.cuda.is_available() else "cpu"
 )
-
-
-# =========================================================
 # MODEL
-# =========================================================
-
 @st.cache_resource
 def load_trained_model():
 
@@ -101,12 +86,7 @@ classes = [
     "Hernia",
     "Normal"
 ]
-
-
-# =========================================================
 # IMAGE TRANSFORM
-# =========================================================
-
 transform = transforms.Compose([
 
     transforms.Resize(
@@ -129,12 +109,7 @@ transform = transforms.Compose([
         ]
     )
 ])
-
-
-# =========================================================
 # OOD / NON-X-RAY VALIDATION FILTER
-# =========================================================
-
 def validate_chest_xray(img_pil):
 
     """
@@ -149,11 +124,7 @@ def validate_chest_xray(img_pil):
     img_np = np.array(
         img_pil
     )
-
-    # -----------------------------------------------------
     # 1. COLOR VARIANCE CHECK
-    # -----------------------------------------------------
-
     if (
         len(img_np.shape) == 3
         and img_np.shape[2] == 3
@@ -190,12 +161,7 @@ def validate_chest_xray(img_pil):
                 f"{color_variance:.1f}). "
                 f"X-rays should be grayscale."
             )
-
-
-    # -----------------------------------------------------
     # 2. CONTRAST / ILLUMINATION CHECK
-    # -----------------------------------------------------
-
     gray = img_pil.convert(
         "L"
     )
@@ -231,12 +197,7 @@ def validate_chest_xray(img_pil):
         True,
         "Valid X-Ray"
     )
-
-
-# =========================================================
 # GRAD-CAM
-# =========================================================
-
 class GradCAM:
 
     def __init__(
@@ -297,12 +258,7 @@ class GradCAM:
         self.forward_handle.remove()
 
         self.backward_handle.remove()
-
-
-# =========================================================
 # GEMINI REAL-TIME GENERATIVE AI EXPLANATION
-# =========================================================
-
 def generate_gemini_explanation(
     pred_class,
     confidence,
@@ -315,11 +271,7 @@ def generate_gemini_explanation(
 ):
 
     try:
-
-        # -------------------------------------------------
         # GET API KEY
-        # -------------------------------------------------
-
         try:
 
             api_key = st.secrets[
@@ -340,21 +292,11 @@ def generate_gemini_explanation(
             )
 
             return None
-
-
-        # -------------------------------------------------
         # GEMINI CLIENT
-        # -------------------------------------------------
-
         client = genai.Client(
             api_key=api_key
         )
-
-
-        # -------------------------------------------------
         # CLASSIFICATION STATUS
-        # -------------------------------------------------
-
         classification_status = (
 
             "AMBIGUOUS / BORDERLINE"
@@ -369,12 +311,7 @@ def generate_gemini_explanation(
         # Grad-CAM is generated separately by the application.
         # Gemini receives only its status, not the X-ray or heatmap.
         gradcam_information = gradcam_status
-
-
-        # -------------------------------------------------
         # TECHNICAL PROMPT
-        # -------------------------------------------------
-
         prompt = f"""
 
 You are an AI explanation assistant for an
@@ -445,12 +382,7 @@ Use only the supplied Grad-CAM status. If generated, explain that Grad-CAM is a 
 Clearly state that this is an academic research-model output, that model probability is not clinical certainty, and that it is NOT a clinical diagnosis.
 
 Use only the supplied values. Keep the tone objective, concise, and technical."""
-
-
-        # -------------------------------------------------
         # GEMINI MODEL FALLBACK CHAIN
-        # -------------------------------------------------
-
         models_to_try = [
 
             "gemini-3.8-flash",
@@ -459,12 +391,7 @@ Use only the supplied values. Keep the tone objective, concise, and technical.""
 
             "gemini-3.6-flash"
         ]
-
-
-        # -------------------------------------------------
         # TRY AVAILABLE MODELS
-        # -------------------------------------------------
-
         for model_name in models_to_try:
 
             try:
@@ -497,12 +424,7 @@ Use only the supplied values. Keep the tone objective, concise, and technical.""
                     "code",
                     None
                 )
-
-
-                # -----------------------------------------
                 # TEMPORARY SERVER / SSL / CONNECTION ERROR
-                # -----------------------------------------
-
                 is_temporary_error = (
 
                     error_code == 503
@@ -543,12 +465,7 @@ Use only the supplied values. Keep the tone objective, concise, and technical.""
 
                     # Try next Gemini model
                     continue
-
-
-                # -----------------------------------------
                 # QUOTA / RATE LIMIT
-                # -----------------------------------------
-
                 is_quota_error = (
 
                     error_code == 429
@@ -573,24 +490,14 @@ Use only the supplied values. Keep the tone objective, concise, and technical.""
                     )
 
                     return None
-
-
-                # -----------------------------------------
                 # OTHER API ERROR
-                # -----------------------------------------
-
                 st.error(
                     "Gemini API error: "
                     f"{str(e)}"
                 )
 
                 return None
-
-
-        # -------------------------------------------------
         # ALL MODELS FAILED
-        # -------------------------------------------------
-
         st.warning(
             "⚠️ Gemini is temporarily unavailable. "
             "The DenseNet121 screening result remains "
@@ -608,12 +515,7 @@ Use only the supplied values. Keep the tone objective, concise, and technical.""
         )
 
         return None
-
-
-# =========================================================
 # SIDEBAR
-# =========================================================
-
 st.sidebar.header(
     "📥 Upload X-Ray"
 )
@@ -636,12 +538,7 @@ uploaded_file = (
 st.sidebar.caption(
     "Supported formats: PNG, JPG, JPEG"
 )
-
-
-# =========================================================
 # NO IMAGE
-# =========================================================
-
 if uploaded_file is None:
 
     st.info(
@@ -670,18 +567,9 @@ if uploaded_file is None:
         "⚠️ Research prototype only. "
         "This system is not a medical diagnosis."
     )
-
-
-# =========================================================
 # IMAGE PROCESSING
-# =========================================================
-
 else:
-
-    # -----------------------------------------------------
     # LOAD IMAGE
-    # -----------------------------------------------------
-
     try:
 
         raw_image = (
@@ -697,12 +585,7 @@ else:
         )
 
         st.stop()
-
-
-    # -----------------------------------------------------
     # IMAGE RESOLUTION
-    # -----------------------------------------------------
-
     width, height = (
         raw_image.size
     )
@@ -719,12 +602,7 @@ else:
         )
 
         st.stop()
-
-
-    # -----------------------------------------------------
     # OOD VALIDATION
-    # -----------------------------------------------------
-
     is_valid, validation_reason = (
         validate_chest_xray(
             raw_image
@@ -763,12 +641,7 @@ else:
 
 
         st.stop()
-
-
-    # -----------------------------------------------------
     # PREPROCESS
-    # -----------------------------------------------------
-
     input_tensor = transform(
         raw_image
     )
@@ -782,12 +655,7 @@ else:
     input_tensor = (
         input_tensor.to(device)
     )
-
-
-    # =====================================================
     # PREDICTION
-    # =====================================================
-
     with torch.no_grad():
 
         output = model(
@@ -807,12 +675,7 @@ else:
                 0
             )
         )
-
-
-    # -----------------------------------------------------
     # MODEL VALUES
-    # -----------------------------------------------------
-
     pred_class = (
         classes[
             predicted.item()
@@ -833,21 +696,11 @@ else:
     normal_prob = (
         probs[1].item() * 100
     )
-
-
-    # -----------------------------------------------------
     # BORDERLINE CHECK
-    # -----------------------------------------------------
-
     is_borderline = (
         confidence < 78.0
     )
-
-
-    # =====================================================
     # SCREENING RESULT
-    # =====================================================
-
     st.subheader(
         "Screening Result"
     )
@@ -856,12 +709,7 @@ else:
     result_col1, result_col2 = (
         st.columns([1, 1])
     )
-
-
-    # -----------------------------------------------------
     # IMAGE
-    # -----------------------------------------------------
-
     with result_col1:
 
         st.image(
@@ -869,12 +717,7 @@ else:
             caption="Uploaded Chest X-Ray",
             use_container_width=True
         )
-
-
-    # -----------------------------------------------------
     # RESULT DETAILS
-    # -----------------------------------------------------
-
     with result_col2:
 
         if is_borderline:
@@ -933,12 +776,7 @@ else:
             "Confidence represents the model's "
             "predicted probability, not medical certainty."
         )
-
-
-        # =================================================
         # REPORT DOWNLOAD
-        # =================================================
-
         timestamp = (
             datetime.now().strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -1013,12 +851,7 @@ radiological evaluation.
 
             mime="text/plain"
         )
-
-
-# =========================================================
 # PROBABILITY SECTION
-# =========================================================
-
     st.divider()
 
 
@@ -1030,12 +863,7 @@ radiological evaluation.
     prob_col1, prob_col2 = (
         st.columns(2)
     )
-
-
-    # -----------------------------------------------------
     # HERNIA PROBABILITY
-    # -----------------------------------------------------
-
     with prob_col1:
 
         st.write(
@@ -1055,12 +883,7 @@ radiological evaluation.
         st.caption(
             f"{hernia_prob:.2f}%"
         )
-
-
-    # -----------------------------------------------------
     # NORMAL PROBABILITY
-    # -----------------------------------------------------
-
     with prob_col2:
 
         st.write(
@@ -1080,12 +903,7 @@ radiological evaluation.
         st.caption(
             f"{normal_prob:.2f}%"
         )
-
-
-# =========================================================
 # GEMINI GENERATIVE AI EXPLANATION
-# =========================================================
-
     st.divider()
 
 
@@ -1172,24 +990,14 @@ radiological evaluation.
                 "unavailable. The DenseNet121 result "
                 "remains available."
             )
-
-
-# =========================================================
 # GRAD-CAM
-# =========================================================
-
     st.divider()
 
 
     st.subheader(
         "Explainable AI — Grad-CAM"
     )
-
-
-    # -----------------------------------------------------
     # HIGH-CONFIDENCE HERNIA ONLY
-    # -----------------------------------------------------
-
     if (
         pred_class == "Hernia"
         and not is_borderline
@@ -1201,12 +1009,7 @@ radiological evaluation.
             "that contributed more strongly to "
             "the DenseNet121 prediction."
         )
-
-
-        # ---------------------------------------------
         # TARGET LAYER
-        # ---------------------------------------------
-
         target_layer = (
             model
             .features
@@ -1220,12 +1023,7 @@ radiological evaluation.
             model,
             target_layer
         )
-
-
-        # ---------------------------------------------
         # FORWARD + BACKWARD
-        # ---------------------------------------------
-
         model.zero_grad()
 
 
@@ -1243,12 +1041,7 @@ radiological evaluation.
 
 
         target_score.backward()
-
-
-        # ---------------------------------------------
         # GET GRADIENTS
-        # ---------------------------------------------
-
         gradients = (
             grad_cam
             .gradients
@@ -1263,12 +1056,7 @@ radiological evaluation.
             .cpu()
             .numpy()[0]
         )
-
-
-        # ---------------------------------------------
         # CHANNEL WEIGHTS
-        # ---------------------------------------------
-
         weights = np.mean(
             gradients,
             axis=(1, 2)
@@ -1279,12 +1067,7 @@ radiological evaluation.
             activations.shape[1:],
             dtype=np.float32
         )
-
-
-        # ---------------------------------------------
         # BUILD CAM
-        # ---------------------------------------------
-
         for i, weight in enumerate(
             weights
         ):
@@ -1293,34 +1076,19 @@ radiological evaluation.
                 weight
                 * activations[i]
             )
-
-
-        # ---------------------------------------------
         # RELU
-        # ---------------------------------------------
-
         cam = np.maximum(
             cam,
             0
         )
-
-
-        # ---------------------------------------------
         # NORMALIZE
-        # ---------------------------------------------
-
         if cam.max() > 0:
 
             cam = (
                 cam
                 / cam.max()
             )
-
-
-        # ---------------------------------------------
         # RESIZE CAM
-        # ---------------------------------------------
-
         cam_image = (
             Image.fromarray(
                 np.uint8(
@@ -1339,21 +1107,11 @@ radiological evaluation.
             )
             / 255.0
         )
-
-
-        # =================================================
         # DISPLAY GRAD-CAM
-        # =================================================
-
         cam_col1, cam_col2 = (
             st.columns([1, 1])
         )
-
-
-        # -------------------------------------------------
         # HEATMAP
-        # -------------------------------------------------
-
         with cam_col1:
 
             fig, ax = plt.subplots(
@@ -1394,12 +1152,7 @@ radiological evaluation.
             plt.close(
                 fig
             )
-
-
-        # -------------------------------------------------
         # INTERPRETATION
-        # -------------------------------------------------
-
         with cam_col2:
 
             st.markdown(
@@ -1421,12 +1174,7 @@ radiological evaluation.
                 "does not prove a clinically confirmed "
                 "pathology."
             )
-
-
-        # -------------------------------------------------
         # REMOVE HOOKS
-        # -------------------------------------------------
-
         grad_cam.remove_hooks()
 
 
@@ -1438,12 +1186,7 @@ radiological evaluation.
             "(≥78%). For Normal or Borderline "
             "outputs, heatmap generation is skipped."
         )
-
-
-# =========================================================
 # RESEARCH PERFORMANCE DASHBOARD
-# =========================================================
-
 st.divider()
 
 st.subheader("📊 Research Performance Dashboard")
@@ -1487,11 +1230,7 @@ with metric_col4:
         "N/A",
         help="Requires class-level test predictions/confusion-matrix counts."
     )
-
-# ---------------------------------------------------------
 # MODEL INFORMATION
-# ---------------------------------------------------------
-
 info_col1, info_col2 = st.columns(2)
 
 with info_col1:
@@ -1511,11 +1250,7 @@ with info_col2:
         st.write("**Visual explainability:** Grad-CAM")
         st.write("**Grad-CAM rule:** High-confidence Hernia only")
         st.write("**Clinical diagnosis:** Not supported")
-
-# ---------------------------------------------------------
 # CONFUSION MATRIX PLACEHOLDER / DATA REQUIREMENT
-# ---------------------------------------------------------
-
 with st.expander("📈 Confusion Matrix & Detailed Evaluation", expanded=False):
 
     st.info(
@@ -1539,12 +1274,7 @@ with st.expander("📈 Confusion Matrix & Detailed Evaluation", expanded=False):
         "Once the test-prediction artifact is added, this section can be upgraded "
         "to render the real confusion matrix and class-wise metrics automatically."
     )
-
-
-# =========================================================
 # FINAL DISCLAIMER
-# =========================================================
-
     st.divider()
 
 
